@@ -1,7 +1,7 @@
-var passport = require('passport-strategy');
-var util = require('util');
-var saml = require('./saml');
-var url = require('url');
+const passport = require('passport-strategy');
+const util = require('util');
+const saml = require('./saml');
+const url = require('url');
 
 function Strategy (options, verify) {
   if (typeof options == 'function') {
@@ -33,7 +33,7 @@ function Strategy (options, verify) {
 util.inherits(Strategy, passport.Strategy);
 
 Strategy.prototype.authenticate = function (req, options) {
-  var self = this;
+  const self = this;
   const saml = options._saml || this._saml;
   options.samlFallback = options.samlFallback || 'login-request';
 
@@ -51,7 +51,7 @@ Strategy.prototype.authenticate = function (req, options) {
         return self.pass();
       }
 
-      var verified = function (err, user, info) {
+      const verified = function (err, user, info) {
         if (err) {
           return self.error(err);
         }
@@ -79,21 +79,21 @@ Strategy.prototype.authenticate = function (req, options) {
   }
 
   if (req.query && (req.query.SAMLResponse || req.query.SAMLRequest)) {
-    var originalQuery = url.parse(req.url).query;
+    const originalQuery = url.parse(req.url).query;
     saml.validateRedirect(req.query, originalQuery, validateCallback);
   } else if (req.body && req.body.SAMLResponse) {
     saml.validatePostResponse(req.body, validateCallback);
   } else if (req.body && req.body.SAMLRequest) {
     saml.validatePostRequest(req.body, validateCallback);
   } else {
-    var requestHandler = {
+    const requestHandler = {
       'login-request': function() {
         if (self._authnRequestBinding === 'HTTP-POST') {
           saml.getAuthorizeForm(req, function(err, data) {
             if (err) {
               self.error(err);
             } else {
-              var res = req.res;
+              const res = req.res;
               res.send(data);
             }
           });

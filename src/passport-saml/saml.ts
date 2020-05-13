@@ -11,7 +11,7 @@ import type * as express from "express";
 // @ts-ignore
 import xmlenc from 'xml-encryption';
 const xpath = xmlCrypto.xpath;
-const InMemoryCacheProvider = require('./inmemory-cache-provider.js').CacheProvider;
+const InMemoryCacheProvider = require('./inmemory-cache-provider').CacheProvider;
 import algorithms from './algorithms';
 const {signAuthnRequestPost} = require('./saml-post-signing');
 const {promisify} = require('util');
@@ -42,7 +42,7 @@ export interface CacheProvider {
 }
 
 interface RequestWithUser extends express.Request{
-  user: Profile
+  user: Profile;
   samlLogoutRequest: any;
 }
 
@@ -473,7 +473,7 @@ class SAML {
     return additionalParams;
   }
 
-  getAuthorizeUrl(req: express.Request, options: {passive?: boolean, additionalParams: any}, callback: (err: Error | null, url?: string) => void) {
+  getAuthorizeUrl(req: express.Request, options: {passive?: boolean; additionalParams: any}, callback: (err: Error | null, url?: string) => void) {
     this.generateAuthorizeRequest(req, this.options.passive, false, (err: Error | null, request?: string) => {
       if (err)
         return callback(err);
@@ -879,7 +879,7 @@ class SAML {
       const algFromURI = alg.toLowerCase().replace(/.*#(.*)$/,'$1');
       return ourAlgo.toLowerCase() === algFromURI;
     }
-    let i = crypto.getHashes().findIndex(hasMatch);
+    const i = crypto.getHashes().findIndex(hasMatch);
     let matchingAlgo;
     if (i > -1) {
       matchingAlgo = crypto.getHashes()[i];
@@ -1382,4 +1382,4 @@ function processValidlySignedPostRequest(self: SAML, {LogoutRequest}: any, dom: 
     }
 }
 
-exports.SAML = SAML;
+exports = SAML;

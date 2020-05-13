@@ -41,6 +41,8 @@
     "@types/xml-crypto": "^1.4.1",
     "@types/xml2js": "^0.4.5",
     "@types/xmldom": "^0.1.29",
+    "@typescript-eslint/eslint-plugin": "^2.33.0",
+    "@typescript-eslint/parser": "^2.33.0",
     "body-parser": "^1.17.1",
     "eslint": "^6.5.1",
     "express": "^4.16.2",
@@ -48,33 +50,16 @@
     "passport": "0.4.x",
     "request": "^2.83.0",
     "should": "*",
-    "sinon": "^7.2.7"
+    "sinon": "^7.2.7",
+    "typescript": "^3.9.2"
   },
   "engines": {
     "node": ">= 8"
   },
   "scripts": {
-    "test": "npm run lint && mocha",
-    "lint": "./node_modules/.bin/eslint lib",
-    "lint:fix": "./node_modules/.bin/eslint --fix lib"
-  },
-  "eslintConfig": {
-    "env": {
-      "node": true,
-      "es6": false,
-      "mocha": true
-    },
-    "extends": "eslint:recommended",
-    "parserOptions": {
-      "ecmaVersion": 9
-    },
-    "rules": {
-      "no-undefined": "off",
-      "no-unused-vars": "off",
-      "semi": [
-        "error",
-        "always"
-      ]
-    }
+    "test": "tsc && npm run lint && mocha",
+    "lint": "./node_modules/.bin/eslint --ext .js,.ts src",
+    "lint:fix": "./node_modules/.bin/eslint --fix lib",
+    "prepublishOnly": "tsc"
   }
 }
