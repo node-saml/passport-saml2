@@ -1,4 +1,5 @@
-const debug = require('debug')('passport-saml');
+import Debug from "debug";
+const debug = Debug('passport-saml');
 import zlib from 'zlib';
 import xml2js from 'xml2js';
 import xmlCrypto from 'xml-crypto';
@@ -11,10 +12,10 @@ import type * as express from "express";
 // @ts-ignore
 import xmlenc from 'xml-encryption';
 const xpath = xmlCrypto.xpath;
-const InMemoryCacheProvider = require('./inmemory-cache-provider').CacheProvider;
+import { CacheProvider as InMemoryCacheProvider} from './inmemory-cache-provider';
 import algorithms from './algorithms';
-const {signAuthnRequestPost} = require('./saml-post-signing');
-const {promisify} = require('util');
+import {signAuthnRequestPost} from './saml-post-signing';
+import {promisify} from 'util';
 
 export type Profile = {
   issuer?: string;
