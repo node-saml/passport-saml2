@@ -67,7 +67,9 @@ describe('strategy#authenticate', function() {
     strategy.authenticate();
   });
 
-  it('uses given options to setup internal saml provider', function(done) {
+  it('uses given options to setup internal saml provider', function () {
+    var superAuthenticateStub = this.superAuthenticateStub;
+
     var samlOptions = {
       issuer: 'http://foo.issuer',
       callbackUrl: 'http://foo.callback',
@@ -82,16 +84,7 @@ describe('strategy#authenticate', function() {
     };
 
     function getSamlOptions (req, fn) {
-      try {
-        fn(null, samlOptions);
-        strategy._saml.options.should.containEql(Object.assign({},
-          { cacheProvider: 'mock cache provider' },
-          samlOptions
-        ));
-        done();
-      } catch (err2) {
-        done(err2);
-      }
+      fn(null, samlOptions);
     }
 
     var strategy = new MultiSamlStrategy(
@@ -99,6 +92,8 @@ describe('strategy#authenticate', function() {
       verify
     );
     strategy.authenticate();
+    should(superAuthenticateStub.getCall(0).args[1]._saml.options.cacheProvider).eql('mock cache provider');
+    sinon.assert.calledOnce(superAuthenticateStub);
   });
 });
 
@@ -147,7 +142,8 @@ describe('strategy#logout', function() {
     strategy.logout();
   });
 
-  it('uses given options to setup internal saml provider', function(done) {
+  it('uses given options to setup internal saml provider', function() {
+    var superAuthenticateStub = this.superAuthenticateStub;
     var samlOptions = {
       issuer: 'http://foo.issuer',
       callbackUrl: 'http://foo.callback',
@@ -162,13 +158,7 @@ describe('strategy#logout', function() {
     };
 
     function getSamlOptions (req, fn) {
-      try {
-        fn(null, samlOptions);
-        strategy._saml.options.should.containEql(samlOptions);
-        done();
-      } catch (err2) {
-        done(err2);
-      }
+      fn(null, samlOptions);
     }
 
     var strategy = new MultiSamlStrategy(
@@ -176,6 +166,9 @@ describe('strategy#logout', function() {
       verify
     );
     strategy.logout();
+    should(superAuthenticateStub.getCall(0).args[2]._saml.options).containEql(samlOptions);
+    sinon.assert.calledOnce(superAuthenticateStub);
+
   });
 });
 

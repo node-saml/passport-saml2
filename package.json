@@ -56,11 +56,12 @@
   "eslintConfig": {
     "env": {
       "node": true,
-      "es6": false
+      "es6": false,
+      "mocha": true
     },
     "extends": "eslint:recommended",
     "parserOptions": {
-      "ecmaVersion": 8
+      "ecmaVersion": 9
     },
     "rules": {
       "no-undefined": "off",
