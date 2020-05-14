@@ -13,9 +13,10 @@ import type * as express from "express";
 import xmlenc from 'xml-encryption';
 const xpath = xmlCrypto.xpath;
 import { CacheProvider as InMemoryCacheProvider} from './inmemory-cache-provider';
-import algorithms from './algorithms';
+import * as algorithms from './algorithms';
 import {signAuthnRequestPost} from './saml-post-signing';
 import {promisify} from 'util';
+import { ValidateCallback } from "./types";
 
 export type Profile = {
   issuer?: string;
@@ -34,7 +35,7 @@ export type Profile = {
   [attributeName: string]: unknown; // arbitrary `AttributeValue`s
 };
 
-export type VerifiedCallback = (err: Error | null, user?: object | null, loggedOd?: boolean) => void;
+export type VerifiedCallback = (err: Error | null, user?: Profile | null, loggedOf?: boolean) => void;
 
 export interface CacheProvider {
   save(key: string | null, value: any, callback: (err: Error | null, cacheItem: CacheItem) => void | null): void;
@@ -42,13 +43,13 @@ export interface CacheProvider {
   remove(key: string, callback: (err: Error | null, key: string) => void | null): void;
 }
 
-interface RequestWithUser extends express.Request{
+export interface RequestWithUser extends express.Request{
   user: Profile;
   samlLogoutRequest: any;
 }
 
 export interface CacheItem {
-  createdAt: Date;
+  createdAt: number;
   value: any;
 }
 
@@ -64,7 +65,7 @@ export interface SAMLOptions {
   privateCert?: string;
   cert?: string | string[] | CertCallback;
   decryptionPvk?: string;
-  signatureAlgorithm?: 'sha1' | 'sha256' | 'sha512';
+  signatureAlgorithm: 'sha1' | 'sha256' | 'sha512';
 
   // Additional SAML behaviors
   additionalParams?: any;
@@ -97,9 +98,77 @@ export interface SAMLOptions {
   additionalLogoutParams?: any;
   logoutCallbackUrl?: string;
   disableRequestACSUrl?: boolean;
+  xmlSignatureTransforms: string[];
+  digestAlgorithm: string;
 }
 
-class SAML {
+interface NameID {
+  value: string | null;
+  format: string | false | 0;
+}
+
+function callBackWithNameID(nameid: Node, callback: (err: Error | null, nameId: NameID) => void) {
+  const format = xpath(nameid, "@Format");
+  return callback(null, {
+    value: nameid.textContent,
+    format: format && format[0] && (format[0] as Node).nodeValue as string
+  });
+}
+
+function processValidlySignedPostRequest(self: SAML, {LogoutRequest}: any, dom: any, callback: ValidateCallback) {
+  const request = LogoutRequest;
+  if (request) {
+    const profile: Partial<Profile> = {};
+    if (request.$.ID) {
+        profile.ID = request.$.ID;
+    } else {
+      return callback(new Error('Missing SAML LogoutRequest ID'));
+    }
+    const issuer = request.Issuer;
+    if (issuer && issuer[0]._) {
+      profile.issuer = issuer[0]._;
+    } else {
+      return callback(new Error('Missing SAML issuer'));
+    }
+    self.getNameID(self, dom, (err: Error | null, nameID?: NameID) => {
+      if(err) {
+        return callback(err);
+      }
+
+      if (nameID) {
+        profile.nameID = nameID.value;
+        if (nameID.format) {
+          profile.nameIDFormat = nameID.format;
+        }
+      } else {
+        return callback(new Error('Missing SAML NameID'));
+      }
+      const sessionIndex = request.SessionIndex;
+      if (sessionIndex) {
+        profile.sessionIndex = sessionIndex[0]._;
+      }
+      callback(null, profile as Profile, true);
+    });
+  } else {
+    return callback(new Error('Unknown SAML request message'));
+  }
+}
+
+
+function processValidlySignedSamlLogout(self: SAML, doc: any, dom: Document, callback: VerifiedCallback) {
+  const response = doc.LogoutResponse;
+  const request = doc.LogoutRequest;
+
+  if (response){
+    return callback(null, null, true);
+  } else if (request) {
+    processValidlySignedPostRequest(self, doc, dom, callback);
+  } else {
+    throw new Error('Unknown SAML response message');
+  }
+}
+
+export class SAML {
   options: SAMLOptions;
   cacheProvider: CacheProvider
   constructor(options: SAMLOptions) {
@@ -155,7 +224,7 @@ class SAML {
 
     if(!options.cacheProvider){
         options.cacheProvider = new InMemoryCacheProvider(
-            {keyExpirationPeriodMs: options.requestIdExpirationPeriodMs });
+            {keyExpirationPeriodMs: options.requestIdExpirationPeriodMs }) as CacheProvider;
     }
 
     if (!options.logoutUrl) {
@@ -210,10 +279,9 @@ class SAML {
   }
 
   signRequest(samlMessage: any) {
-    let signer;
     const samlMessageToSign: any = {};
     samlMessage.SigAlg = algorithms.getSigningAlgorithm(this.options.signatureAlgorithm);
-    signer = algorithms.getSigner(this.options.signatureAlgorithm);
+    const signer = algorithms.getSigner(this.options.signatureAlgorithm);
     if (samlMessage.SAMLRequest) {
       samlMessageToSign.SAMLRequest = samlMessage.SAMLRequest;
     }
@@ -554,14 +622,14 @@ class SAML {
 
   }
 
-  async getLogoutUrl(req: RequestWithUser, options: {additionalParams?: any}, callback: () => void) {
+  async getLogoutUrl(req: RequestWithUser, options: {additionalParams?: any}, callback: (err: Error | null, url?: string) => void) {
     const request = await this.generateLogoutRequest(req);
     const operation = 'logout';
     const overrideParams = options ? options.additionalParams || {} : {};
     return this.requestToUrl(request, null, operation, this.getAdditionalParams(req, operation, overrideParams), callback);
   }
 
-  getLogoutResponseUrl(req: RequestWithUser, options: {additionalParams: any}, callback: () => void) {
+  getLogoutResponseUrl(req: RequestWithUser, options: {additionalParams: any}, callback: (err: Error | null, url?: string) => void) {
     const response = this.generateLogoutResponse(req, req.samlLogoutRequest);
     const operation = 'logout';
     const overrideParams = options ? options.additionalParams || {} : {};
@@ -587,7 +655,7 @@ class SAML {
     if (typeof(this.options.cert) === 'function') {
       let certs = await promisify(this.options.cert)();
       if (!Array.isArray(certs)) {
-        certs = [certs];
+        certs = [certs!];
       }
       return certs;
     }
@@ -622,8 +690,8 @@ class SAML {
     const sig = new xmlCrypto.SignedXml();
     // @ts-ignore
     sig.keyInfoProvider = {
-      getKeyInfo: key => "<X509Data></X509Data>",
-      getKey: keyInfo => Buffer.from(this.certToPEM(cert)),
+      getKeyInfo: () => "<X509Data></X509Data>",
+      getKey: () => Buffer.from(this.certToPEM(cert)),
     };
     sig.loadSignature(signature);
     // We expect each signature to contain exactly one reference to the top level of the xml we
@@ -647,7 +715,7 @@ class SAML {
     return sig.checkSignature(fullXml);
   }
 
-  validatePostResponse({SAMLResponse}: any, callback: VerifiedCallback) {
+  validatePostResponse({SAMLResponse}: any, callback: ValidateCallback) {
     let xml: string;
     let doc: Document;
     let inResponseTo: Element[] | null | string;
@@ -786,7 +854,7 @@ class SAML {
       debug('validatePostResponse resulted in an error: %s', err);
       if (this.options.validateInResponseTo) {
         const removeFn = promisify(this.cacheProvider.remove).bind(this.cacheProvider);
-        await removeFn(inResponseTo);
+        await removeFn(inResponseTo as string);
         callback(err);
       } else {
         callback(err);
@@ -810,10 +878,10 @@ class SAML {
     }
   }
 
-  validateRedirect(container: Record<string, string>, originalQuery: string, callback: VerifiedCallback) {
+  validateRedirect(container: qs.ParsedQs, originalQuery: string | null, callback: ValidateCallback) {
     const samlMessageType = container.SAMLRequest ? 'SAMLRequest' : 'SAMLResponse';
 
-    const data = Buffer.from(container[samlMessageType], "base64");
+    const data = Buffer.from(container[samlMessageType] as string, "base64");
     zlib.inflateRaw(data, (err, inflated) => {
       if (err) {
         return callback(err);
@@ -833,7 +901,7 @@ class SAML {
 
         (async () => samlMessageType === 'SAMLResponse' ?
           this.verifyLogoutResponse(doc) : this.verifyLogoutRequest(doc))()
-        .then(() => this.hasValidSignatureForRedirect(container, originalQuery))
+        .then(() => this.hasValidSignatureForRedirect(container, originalQuery!))
         .then(() => processValidlySignedSamlLogout(this, doc, dom, callback))
         .catch((err: Error) => callback(err));
       });
@@ -935,7 +1003,7 @@ class SAML {
     }
   }
 
-  processValidlySignedAssertion(xml: string, samlResponseXml: string, inResponseTo: string | null, callback: VerifiedCallback) {
+  processValidlySignedAssertion(xml: string, samlResponseXml: string, inResponseTo: string | null, callback: ValidateCallback) {
     let msg;
     const parserConfig = {
       explicitRoot: true,
@@ -948,7 +1016,7 @@ class SAML {
     let parsedAssertion: any;
     const parser = new xml2js.Parser(parserConfig);
     parser.parseStringPromise(xml)
-    .then(doc => {
+    .then((doc: any): Promise<string | void> => {
       parsedAssertion = doc;
       assertion = doc.Assertion;
 
@@ -1029,7 +1097,7 @@ class SAML {
                     if (nowMs < createdAt.getTime() + this.options.requestIdExpirationPeriodMs)
                       foundValidInResponseTo = true;
                   }
-                  return removeFn(inResponseTo);
+                  return removeFn(inResponseTo as string);
                 })
                 .then(() => {
                   if (!foundValidInResponseTo) {
@@ -1040,11 +1108,12 @@ class SAML {
             }
           }
         } else {
-          return removeFn(inResponseTo);
+          return removeFn(inResponseTo as string);
         }
       } else {
         return Promise.resolve();
       }
+      return Promise.resolve();
     })
     .then(() => {
       const conditions = assertion.Conditions ? assertion.Conditions[0] : null;
@@ -1103,9 +1172,9 @@ class SAML {
       profile.getAssertion = () => parsedAssertion;
       profile.getSamlResponseXml = () => samlResponseXml;
 
-      callback(null, profile, false);
+      callback(null, profile as Profile, false);
     })
-    .catch(err => callback(err));
+    .catch((err: Error) => callback(err));
   }
 
   checkTimestampsValidityError(nowMs: number, notBefore: string, notOnOrAfter: string) {
@@ -1145,7 +1214,7 @@ class SAML {
     return null;
   }
 
-  validatePostRequest({SAMLRequest}: any, callback: (err: Error | null) => void) {
+  validatePostRequest({SAMLRequest}: any, callback: ValidateCallback) {
     const xml = Buffer.from(SAMLRequest, 'base64').toString('utf8');
     const dom = new xmldom.DOMParser().parseFromString(xml);
     const parserConfig = {
@@ -1318,69 +1387,5 @@ class SAML {
   }
 }
 
-function processValidlySignedSamlLogout(self: SAML, doc: any, dom: Document, callback: VerifiedCallback) {
-  const response = doc.LogoutResponse;
-  const request = doc.LogoutRequest;
-
-  if (response){
-    return callback(null, null, true);
-  } else if (request) {
-    processValidlySignedPostRequest(self, doc, dom, callback);
-  } else {
-    throw new Error('Unknown SAML response message');
-  }
-}
-
-interface NameID {
-  value: string | null;
-  format: string | false | 0;
-}
-
-function callBackWithNameID(nameid: Node, callback: (err: Error | null, nameId: NameID) => void) {
-  const format = xpath(nameid, "@Format");
-  return callback(null, {
-    value: nameid.textContent,
-    format: format && format[0] && (format[0] as Node).nodeValue as string
-  });
-}
-
-function processValidlySignedPostRequest(self: SAML, {LogoutRequest}: any, dom: any, callback: VerifiedCallback) {
-    const request = LogoutRequest;
-    if (request) {
-      const profile: Partial<Profile> = {};
-      if (request.$.ID) {
-          profile.ID = request.$.ID;
-      } else {
-        return callback(new Error('Missing SAML LogoutRequest ID'));
-      }
-      const issuer = request.Issuer;
-      if (issuer && issuer[0]._) {
-        profile.issuer = issuer[0]._;
-      } else {
-        return callback(new Error('Missing SAML issuer'));
-      }
-      self.getNameID(self, dom, (err: Error | null, nameID?: NameID) => {
-        if(err) {
-          return callback(err);
-        }
-
-        if (nameID) {
-          profile.nameID = nameID.value;
-          if (nameID.format) {
-            profile.nameIDFormat = nameID.format;
-          }
-        } else {
-          return callback(new Error('Missing SAML NameID'));
-        }
-        const sessionIndex = request.SessionIndex;
-        if (sessionIndex) {
-          profile.sessionIndex = sessionIndex[0]._;
-        }
-        callback(null, profile, true);
-      });
-    } else {
-      return callback(new Error('Unknown SAML request message'));
-    }
-}
 
 exports = SAML;

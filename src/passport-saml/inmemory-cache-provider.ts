@@ -1,3 +1,5 @@
+import { CacheItem } from "./saml";
+
 /**
  * Simple in memory cache provider.  To be used to store state of requests that needs
  * to be validated/checked when a response is received.
@@ -12,9 +14,14 @@
  * @param options
  * @constructor
  */
-class CacheProvider {
-    constructor(options) {
-        const self = this;
+interface CacheProviderOptions {
+    keyExpirationPeriodMs: number;
+}
+export class CacheProvider {
+    options: CacheProviderOptions;
+    cacheKeys: Record<string, CacheItem>
+
+    constructor(options: Partial<CacheProviderOptions>) {
         this.cacheKeys = {};
 
         if (!options) {
@@ -25,15 +32,15 @@ class CacheProvider {
             options.keyExpirationPeriodMs = 28800000;  // 8 hours
         }
 
-        this.options = options;
+        this.options = options as CacheProviderOptions;
 
         // Expire old cache keys
         const expirationTimer = setInterval(() => {
             const nowMs = new Date().getTime();
-            const keys = Object.keys(self.cacheKeys);
+            const keys = Object.keys(this.cacheKeys);
             keys.forEach(key => {
-                if(nowMs >= new Date(self.cacheKeys[key].createdAt).getTime() + self.options.keyExpirationPeriodMs){
-                    self.remove(key, () => {});
+                if(nowMs >= new Date(this.cacheKeys[key].createdAt).getTime() + this.options.keyExpirationPeriodMs){
+                    this.remove(key, () => undefined);
                 }
             });
         }, this.options.keyExpirationPeriodMs);
@@ -51,7 +58,7 @@ class CacheProvider {
      * @param id
      * @param value
      */
-    save(key, value, callback) {
+    save(key: string, value: any, callback: (err: Error | null, item: CacheItem | null) => void) {
         if(!this.cacheKeys[key])
         {
             this.cacheKeys[key] = {
@@ -73,7 +80,7 @@ class CacheProvider {
      * @param id
      * @returns {boolean}
      */
-    get(key, callback) {
+    get(key: string, callback: (err: Error | null, value: any) => void) {
         if(this.cacheKeys[key]){
             callback(null, this.cacheKeys[key].value);
         }
@@ -88,7 +95,7 @@ class CacheProvider {
      * Removes an item from the cache if it exists
      * @param key
      */
-    remove(key, callback) {
+    remove(key: string, callback: (err: Error | null, key: string | null) => void) {
         if(this.cacheKeys[key])
         {
             delete this.cacheKeys[key];
@@ -101,5 +108,3 @@ class CacheProvider {
 
     }
 }
-
-exports.CacheProvider = CacheProvider;

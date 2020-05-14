@@ -32,6 +32,8 @@ module.exports = {
     ],
     "@typescript-eslint/no-non-null-assertion": 0,
     "@typescript-eslint/ban-ts-ignore": 0,
+    "@typescript-eslint/explicit-function-return-type": "off",
+    "@typescript-eslint/no-explicit-any": "off"
   },
   extends: [
     "eslint:recommended",
