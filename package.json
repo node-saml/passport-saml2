@@ -1,6 +1,6 @@
 {
   "name": "passport-saml-next",
-  "version": "2.4.2",
+  "version": "2.4.3",
   "license": "MIT",
   "keywords": [
     "saml",
@@ -23,7 +23,8 @@
     "Herbert Vojčík",
     "Peter Loer",
     "Mark Stosberg",
-    "Chris Barth"
+    "Chris Barth",
+    "Andrii Kostenko"
   ],
   "repository": {
     "type": "git",
