@@ -1,6 +1,6 @@
 {
   "name": "passport-saml-next",
-  "version": "2.4.0",
+  "version": "2.4.1",
   "license": "MIT",
   "keywords": [
     "saml",
@@ -26,6 +26,7 @@
     "url": "https://github.com/Short-io/passport-saml2.git"
   },
   "main": "./lib/passport-saml",
+  "types": "./lib/passport-saml",
   "dependencies": {
     "debug": "^3.1.0",
     "passport-strategy": "*",
