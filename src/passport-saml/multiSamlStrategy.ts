@@ -35,7 +35,7 @@ class MultiSamlStrategy extends SamlStrategy {
         return this.error(err);
       }
 
-      const _saml = new saml.SAML(Object.assign({}, this._options, samlOptions));
+      const _saml = new saml.SAML({...this._options, ...samlOptions});
       super.authenticate(req, {...options, _saml});
     });
   }
@@ -46,7 +46,7 @@ class MultiSamlStrategy extends SamlStrategy {
         return callback(err);
       }
 
-      const _saml = new saml.SAML(Object.assign({}, this._options, samlOptions));
+      const _saml = new saml.SAML({...this._options, ...samlOptions});
       super.logout(req as saml.RequestWithUser, callback, {
         _saml 
       });
@@ -67,7 +67,7 @@ class MultiSamlStrategy extends SamlStrategy {
         return callback(err);
       }
 
-      const _saml = new saml.SAML(Object.assign({}, this._options, samlOptions));
+      const _saml = new saml.SAML({...this._options, ...samlOptions});
       return callback(null, super.generateServiceProviderMetadata(decryptionCert, signingCert, { _saml }));
     });
   }
