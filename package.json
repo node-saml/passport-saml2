@@ -1,6 +1,6 @@
 {
   "name": "passport-saml-next",
-  "version": "2.4.1",
+  "version": "2.4.2",
   "license": "MIT",
   "keywords": [
     "saml",
@@ -13,6 +13,10 @@
     "name": "Henri Bergius",
     "email": "henri.bergius@iki.fi",
     "url": "http://bergie.iki.fi"
+  },
+  "directories": {
+    "lib": "lib",
+    "test": "test"
   },
   "contributors": [
     "Michael Bosworth",
