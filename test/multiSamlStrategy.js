@@ -197,7 +197,7 @@ describe('strategy#generateServiceProviderMetadata', function() {
 
 
     var strategy = new MultiSamlStrategy({ getSamlOptions: getSamlOptions }, verify);
-    strategy.generateServiceProviderMetadata('foo', 'bar', 'baz', function () {});
+    strategy.generateServiceProviderMetadataAsync('foo', 'bar', 'baz', function () {});
   });
 
   it('passes options on to saml strategy', function(done) {
@@ -217,7 +217,7 @@ describe('strategy#generateServiceProviderMetadata', function() {
     };
 
     var strategy = new MultiSamlStrategy(passportOptions, verify);
-    strategy.generateServiceProviderMetadata('foo', 'bar', 'baz', function () {});
+    strategy.generateServiceProviderMetadataAsync('foo', 'bar', 'baz', function () {});
   });
 
   it('should pass error to callback function', function(done) {
@@ -228,7 +228,7 @@ describe('strategy#generateServiceProviderMetadata', function() {
     };
 
     var strategy = new MultiSamlStrategy(passportOptions, verify);
-    strategy.generateServiceProviderMetadata('foo', 'bar', 'baz', function (error, result) {
+    strategy.generateServiceProviderMetadataAsync('foo', 'bar', 'baz', function (error, result) {
       try {
         should(error).equal('My error');
         done();
@@ -246,7 +246,7 @@ describe('strategy#generateServiceProviderMetadata', function() {
     };
 
     var strategy = new MultiSamlStrategy(passportOptions, verify);
-    strategy.generateServiceProviderMetadata('foo', 'bar', 'baz', function (error, result) {
+    strategy.generateServiceProviderMetadataAsync('foo', 'bar', 'baz', function (error, result) {
       try {
         should(result).equal('My Metadata Result');
         done();

@@ -1,11 +1,9 @@
 import passport from 'passport-strategy';
 import * as saml from './saml';
 import url from 'url';
-import { AuthOptions } from './types';
+import { AuthOptions, VerifyCallback } from './types';
 
 type VerifyCallbackWithRequest = (req: saml.RequestWithUser, profile?: saml.Profile | null, info?: any) => void; 
-
-type VerifyCallback = (profile?: saml.Profile | null, verified?: saml.VerifiedCallback) => void;
 
 class Strategy extends passport.Strategy {
   _saml: saml.SAML;
@@ -45,7 +43,7 @@ class Strategy extends passport.Strategy {
     this._authnRequestBinding = options.authnRequestBinding || 'HTTP-Redirect';
   }
 
-  logout(req: saml.RequestWithUser, callback: () => null, options: {_saml: saml.SAML}) {
+  logout(req: saml.RequestWithUser, callback: (err: Error | null) => null, options: {_saml: saml.SAML}) {
     const saml = options && options._saml ? options._saml : this._saml;
     saml.getLogoutUrl(req, {}, callback);
   }
@@ -124,9 +122,9 @@ class Strategy extends passport.Strategy {
             saml.getAuthorizeUrl(req, options, redirectIfSuccess);
           }
         },
-        'logout-request': function () {
+        'logout-request': () => {
           saml.getLogoutUrl(req, options, redirectIfSuccess);
-        }.bind(self)
+        }
       }[options.samlFallback];
 
       if (typeof requestHandler !== 'function') {

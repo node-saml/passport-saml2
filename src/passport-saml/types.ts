@@ -6,3 +6,4 @@ export interface AuthOptions {
 }
 
 export type ValidateCallback = (err: Error | null, profile?: saml.Profile | null, loggedOut?: boolean) => void;
+export type VerifyCallback = (profile?: saml.Profile | null, verified?: saml.VerifiedCallback) => void;

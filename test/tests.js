@@ -557,7 +557,7 @@ describe( 'passport-saml /', function() {
           });
 
         app.use( function( err, req, res, next ) {
-          // console.log( err.stack );
+          console.log( err.stack );
           res.status(500).send('500 Internal Server Error');
         });
 

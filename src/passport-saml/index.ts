@@ -1,5 +1,5 @@
 import Strategy from './strategy';
-import * as SAML from './saml';
+import { SAML } from './saml';
 export {
     Strategy,
     SAML

@@ -53,13 +53,14 @@
     "request": "^2.83.0",
     "should": "*",
     "sinon": "^7.2.7",
+    "source-map-support": "^0.5.19",
     "typescript": "^3.9.2"
   },
   "engines": {
-    "node": ">= 8"
+    "node": ">= 10"
   },
   "scripts": {
-    "test": "tsc && npm run lint && mocha",
+    "test": "tsc && npm run lint && mocha --require source-map-support/register",
     "lint": "./node_modules/.bin/eslint --ext .js,.ts src",
     "lint:fix": "./node_modules/.bin/eslint --fix lib",
     "prepublishOnly": "tsc"

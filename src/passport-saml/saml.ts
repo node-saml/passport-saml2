@@ -1,5 +1,5 @@
 import Debug from "debug";
-const debug = Debug('passport-saml');
+const debug = Debug('passport-saml-next');
 import zlib from 'zlib';
 import xml2js from 'xml2js';
 import xmlCrypto from 'xml-crypto';
@@ -38,9 +38,9 @@ export type Profile = {
 export type VerifiedCallback = (err: Error | null, user?: Profile | null, loggedOf?: boolean) => void;
 
 export interface CacheProvider {
-  save(key: string | null, value: any, callback: (err: Error | null, cacheItem: CacheItem) => void | null): void;
+  save(key: string | null, value: any, callback: (err: Error | null, cacheItem: CacheItem | null) => void | null): void;
   get(key: string, callback: (err: Error | null, value: any) => void | null): void;
-  remove(key: string, callback: (err: Error | null, key: string) => void | null): void;
+  remove(key: string, callback: (err: Error | null, key: string | null) => void | null): void;
 }
 
 export interface RequestWithUser extends express.Request{
@@ -1016,7 +1016,7 @@ export class SAML {
     let parsedAssertion: any;
     const parser = new xml2js.Parser(parserConfig);
     parser.parseStringPromise(xml)
-    .then((doc: any): Promise<string | void> => {
+    .then((doc: any): Promise<string | void | null> => {
       parsedAssertion = doc;
       assertion = doc.Assertion;
 
@@ -1386,6 +1386,3 @@ export class SAML {
     return wrappedKey;
   }
 }
-
-
-exports = SAML;
