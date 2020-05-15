@@ -72,4 +72,4 @@ class MultiSamlStrategy extends SamlStrategy {
   }
 }
 
-module.exports = MultiSamlStrategy;
+export = MultiSamlStrategy;
