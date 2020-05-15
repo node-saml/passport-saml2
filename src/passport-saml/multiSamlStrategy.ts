@@ -2,15 +2,16 @@ import * as saml from './saml';
 import {CacheProvider as InMemoryCacheProvider} from './inmemory-cache-provider';
 import SamlStrategy from './strategy';
 import * as express from "express";
-import { AuthOptions, VerifyCallback } from './types';
+import { AuthenticateOptions, VerifyCallback, VerifyCallbackWithRequest } from './types';
 
 interface MultiSamlOptions extends saml.SAMLOptions {
-  getSamlOptions(req: express.Request, cb: (err: Error | null, samlOptions: saml.SAMLOptions) => void): void;
+  passReqToCallback?: boolean;
+  getSamlOptions(req: express.Request, cb: (err: Error | null, samlOptions?: Partial<saml.SAMLOptions>) => void): void;
 }
 
 class MultiSamlStrategy extends SamlStrategy {
   _options: MultiSamlOptions
-  constructor(options: MultiSamlOptions, verify: VerifyCallback) {
+  constructor(options: Partial<MultiSamlOptions>, verify: VerifyCallback | VerifyCallbackWithRequest) {
     if (!options || typeof options.getSamlOptions != 'function') {
       throw new Error('Please provide a getSamlOptions function');
     }
@@ -24,11 +25,11 @@ class MultiSamlStrategy extends SamlStrategy {
             {keyExpirationPeriodMs: options.requestIdExpirationPeriodMs });
     }
 
-    super(options, verify);
-    this._options = options;
+    super(options as saml.SAMLOptions, verify);
+    this._options = options as MultiSamlOptions;
   }
 
-  authenticate(req: saml.RequestWithUser, options: AuthOptions) {
+  authenticate(req: express.Request, options: AuthenticateOptions) {
     this._options.getSamlOptions(req, (err, samlOptions) => {
       if (err) {
         return this.error(err);
@@ -39,14 +40,14 @@ class MultiSamlStrategy extends SamlStrategy {
     });
   }
 
-  logout(req: saml.RequestWithUser, callback: (err: Error | null) => null) {
+  logout(req: express.Request, callback: (err: Error | null) => null) {
     this._options.getSamlOptions(req, (err, samlOptions) => {
       if (err) {
         return callback(err);
       }
 
       const _saml = new saml.SAML(Object.assign({}, this._options, samlOptions));
-      super.logout(req, callback, {
+      super.logout(req as saml.RequestWithUser, callback, {
         _saml 
       });
     });
@@ -56,7 +57,7 @@ class MultiSamlStrategy extends SamlStrategy {
     throw new Error("Please use generateServiceProviderMetadataAsync instead");
   }
 
-  generateServiceProviderMetadataAsync(req: saml.RequestWithUser, decryptionCert: string, signingCert: string, callback: (err: Error | null, metadata?: string) => void) {
+  generateServiceProviderMetadataAsync(req: express.Request, decryptionCert: string | null, signingCert: string, callback: (err: Error | null, metadata?: string) => void) {
     if (typeof callback !== 'function') {
       throw new Error("Metadata can't be provided synchronously for MultiSamlStrategy.");
     }

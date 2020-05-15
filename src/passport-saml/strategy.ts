@@ -1,11 +1,10 @@
-import passport from 'passport-strategy';
+import { Strategy as BaseStrategy } from 'passport-strategy';
 import * as saml from './saml';
 import url from 'url';
-import { AuthOptions, VerifyCallback } from './types';
+import * as express from "express";
+import { AuthenticateOptions, VerifyCallback, VerifyCallbackWithRequest } from './types';
 
-type VerifyCallbackWithRequest = (req: saml.RequestWithUser, profile?: saml.Profile | null, info?: any) => void; 
-
-class Strategy extends passport.Strategy {
+class Strategy extends BaseStrategy {
   _saml: saml.SAML;
   _verify: VerifyCallback | VerifyCallbackWithRequest;
   name: string;
@@ -17,7 +16,9 @@ class Strategy extends passport.Strategy {
   success!: (user: saml.Profile, info: any) => void;
   _authnRequestBinding: string;
 
-  constructor(options: saml.SAMLOptions, verify: VerifyCallback) {
+  constructor(verify: VerifyCallback | VerifyCallbackWithRequest);
+  constructor(options: saml.SAMLOptions, verify: VerifyCallback | VerifyCallbackWithRequest);
+  constructor(options: saml.SAMLOptions | VerifyCallback | VerifyCallbackWithRequest, verify?: VerifyCallback | VerifyCallbackWithRequest) {
     if (typeof options == 'function') {
       verify = options;
       options = {} as saml.SAMLOptions;
@@ -48,12 +49,12 @@ class Strategy extends passport.Strategy {
     saml.getLogoutUrl(req, {}, callback);
   }
 
-  generateServiceProviderMetadata(decryptionCert: string, signingCert: string, options: {_saml: saml.SAML}) {
+  generateServiceProviderMetadata(decryptionCert: string | null, signingCert: string, options: {_saml: saml.SAML}) {
     const saml = options && options._saml ? options._saml : this._saml;
     return saml.generateServiceProviderMetadata(decryptionCert, signingCert);
   }
 
-  authenticate(req: saml.RequestWithUser, options: AuthOptions) {
+  authenticate(req: express.Request, options: AuthenticateOptions) {
     const saml = options._saml || this._saml;
     options.samlFallback = options.samlFallback || 'login-request';
 
@@ -74,8 +75,8 @@ class Strategy extends passport.Strategy {
       if (loggedOut) {
         req.logout();
         if (profile) {
-          req.samlLogoutRequest = profile;
-          return this._saml.getLogoutResponseUrl(req, options, redirectIfSuccess);
+          (req as saml.RequestWithUser).samlLogoutRequest = profile;
+          return this._saml.getLogoutResponseUrl(req as saml.RequestWithUser, options, redirectIfSuccess);
         }
         return this.pass();
       }
@@ -93,7 +94,7 @@ class Strategy extends passport.Strategy {
       };
 
       if (this._passReqToCallback) {
-        (this._verify as VerifyCallbackWithRequest)(req, profile, verified);
+        (this._verify as VerifyCallbackWithRequest)(req as saml.RequestWithUser, profile, verified);
       } else {
         (this._verify as VerifyCallback)(profile, verified);
       }
@@ -123,7 +124,7 @@ class Strategy extends passport.Strategy {
           }
         },
         'logout-request': () => {
-          saml.getLogoutUrl(req, options, redirectIfSuccess);
+          saml.getLogoutUrl(req as saml.RequestWithUser, options, redirectIfSuccess);
         }
       }[options.samlFallback];
 

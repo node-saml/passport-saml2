@@ -17,6 +17,7 @@ import * as algorithms from './algorithms';
 import {signAuthnRequestPost} from './saml-post-signing';
 import {promisify} from 'util';
 import { ValidateCallback } from "./types";
+import qs from "qs";
 
 export type Profile = {
   issuer?: string;
@@ -35,7 +36,7 @@ export type Profile = {
   [attributeName: string]: unknown; // arbitrary `AttributeValue`s
 };
 
-export type VerifiedCallback = (err: Error | null, user?: Profile | null, loggedOf?: boolean) => void;
+export type VerifiedCallback = (err: Error | null, user?: any, loggedOf?: boolean) => void;
 
 export interface CacheProvider {
   save(key: string | null, value: any, callback: (err: Error | null, cacheItem: CacheItem | null) => void | null): void;
@@ -44,8 +45,8 @@ export interface CacheProvider {
 }
 
 export interface RequestWithUser extends express.Request{
-  user: Profile;
-  samlLogoutRequest: any;
+  user?: Profile;
+  samlLogoutRequest?: any;
 }
 
 export interface CacheItem {
@@ -74,7 +75,7 @@ export interface SAMLOptions {
   acceptedClockSkewMs: number;
   attributeConsumingServiceIndex?: string;
   disableRequestedAuthnContext?: boolean;
-  authnContext: string[];
+  authnContext: string[] | string;
   forceAuthn?: boolean;
   skipRequestCompression?: boolean;
   authnRequestBinding?: string;
@@ -348,7 +349,7 @@ export class SAML {
 
       if (!this.options.disableRequestedAuthnContext) {
         const authnContextClassRefs: Record<string, string>[] = [];
-        this.options.authnContext.forEach(value => {
+        (this.options.authnContext as string[]).forEach(value => {
           authnContextClassRefs.push({
               '@xmlns:saml': 'urn:oasis:names:tc:SAML:2.0:assertion',
               '#text': value
@@ -398,24 +399,24 @@ export class SAML {
           '#text': this.options.issuer
         },
         'saml:NameID' : {
-          '@Format': user.nameIDFormat,
-          '#text': user.nameID
+          '@Format': user!.nameIDFormat,
+          '#text': user!.nameID
         }
       }
     };
 
-    if (user.nameQualifier != null) {
-      request['samlp:LogoutRequest']['saml:NameID']['@NameQualifier'] = user.nameQualifier;
+    if (user!.nameQualifier != null) {
+      request['samlp:LogoutRequest']['saml:NameID']['@NameQualifier'] = user!.nameQualifier;
     }
 
-    if (user.spNameQualifier != null) {
-      request['samlp:LogoutRequest']['saml:NameID']['@SPNameQualifier'] = user.spNameQualifier;
+    if (user!.spNameQualifier != null) {
+      request['samlp:LogoutRequest']['saml:NameID']['@SPNameQualifier'] = user!.spNameQualifier;
     }
 
-    if (user.sessionIndex) {
+    if (user!.sessionIndex) {
       request['samlp:LogoutRequest']['saml2p:SessionIndex'] = {
         '@xmlns:saml2p': 'urn:oasis:names:tc:SAML:2.0:protocol',
-        '#text': user.sessionIndex
+        '#text': user!.sessionIndex
       };
     }
     const saveFn = promisify(this.cacheProvider.save).bind(this.cacheProvider);
@@ -1279,7 +1280,7 @@ export class SAML {
     callback(new Error('Missing SAML NameID'));
   }
 
-  generateServiceProviderMetadata(decryptionCert: string, signingCert: string) {
+  generateServiceProviderMetadata(decryptionCert: string | null, signingCert: string) {
     const metadata: any = {
       'EntityDescriptor' : {
         '@xmlns': 'urn:oasis:names:tc:SAML:2.0:metadata',
@@ -1328,9 +1329,9 @@ export class SAML {
 
       if (this.options.decryptionPvk) {
 
-        decryptionCert = decryptionCert.replace( /-+BEGIN CERTIFICATE-+\r?\n?/, '' );
-        decryptionCert = decryptionCert.replace( /-+END CERTIFICATE-+\r?\n?/, '' );
-        decryptionCert = decryptionCert.replace( /\r\n/g, '\n' );
+        decryptionCert = decryptionCert!.replace( /-+BEGIN CERTIFICATE-+\r?\n?/, '' );
+        decryptionCert = decryptionCert!.replace( /-+END CERTIFICATE-+\r?\n?/, '' );
+        decryptionCert = decryptionCert!.replace( /\r\n/g, '\n' );
 
         metadata.EntityDescriptor.SPSSODescriptor.KeyDescriptor.push({
           '@use': 'encryption',

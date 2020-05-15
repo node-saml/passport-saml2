@@ -34,7 +34,7 @@
   "types": "./lib/passport-saml",
   "dependencies": {
     "debug": "^3.1.0",
-    "passport-strategy": "*",
+    "passport-strategy": "^1.0.0",
     "xml-crypto": "^1.4.0",
     "xml-encryption": "^1.2.0",
     "xml2js": "^0.4.23",
