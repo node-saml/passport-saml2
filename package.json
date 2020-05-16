@@ -68,7 +68,7 @@
   "scripts": {
     "test": "tsc && npm run lint && mocha --require source-map-support/register",
     "lint": "./node_modules/.bin/eslint --ext .js,.ts src",
-    "lint:fix": "./node_modules/.bin/eslint --fix lib",
+    "lint:fix": "./node_modules/.bin/eslint --fix src",
     "prepublishOnly": "tsc"
   }
 }
