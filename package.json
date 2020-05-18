@@ -54,6 +54,7 @@
     "body-parser": "^1.17.1",
     "eslint": "^6.5.1",
     "express": "^4.16.2",
+    "husky": "^4.2.5",
     "mocha": "^6.0.2",
     "passport": "0.4.x",
     "request": "^2.83.0",
@@ -71,5 +72,10 @@
     "lint": "./node_modules/.bin/eslint --ext .js,.ts src",
     "lint:fix": "./node_modules/.bin/eslint --fix src",
     "prepublishOnly": "tsc"
+  },
+  "husky": {
+    "hooks": {
+      "pre-commit": "typedoc --out docs src && git add docs"
+    }
   }
 }
