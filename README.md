@@ -1,6 +1,6 @@
 Passport-SAML-Next. ES6 classes, no Q dependency, latest dependencies
 =============
-[![Build Status](https://travis-ci.org/Short-io/passport-saml2.svg?branch=master)](https://travis-ci.org/Short-io/passport-saml2) [![GitHub version](https://badge.fury.io/gh/Short-io%2Fpassport-saml2.svg)](https://badge.fury.io/gh/Short-io%2Fpassport-saml2) [![npm version](https://badge.fury.io/js/passport-saml-next.svg)](http://badge.fury.io/js/passport-saml-next) [![dependencies](https://david-dm.org/Short-io/passport-saml2.svg)](https://david-dm.org/Short-io/passport-saml2.svg) [![devDependencies](https://david-dm.org/Short-io/passport-saml2/dev-status.svg)](https://david-dm.org/Short-io/passport-saml2/dev-status.svg) [![peerDependencies](https://david-dm.org/bergie/passport-saml/peer-status.svg)](https://david-dm.org/bergie/passport-saml/peer-status.svg)
+[![Build Status](https://travis-ci.org/Short-io/passport-saml2.svg?branch=master)](https://travis-ci.org/Short-io/passport-saml2) [![GitHub version](https://badge.fury.io/gh/Short-io%2Fpassport-saml2.svg)](https://badge.fury.io/gh/Short-io%2Fpassport-saml2) [![npm version](https://badge.fury.io/js/passport-saml-next.svg)](http://badge.fury.io/js/passport-saml-next) ![Libraries.io dependency status for latest release](https://img.shields.io/librariesio/release/npm/passport-saml-next) ![node-current](https://img.shields.io/node/v/passport-saml-next)
 
 [![NPM](https://nodei.co/npm/passport-saml-next.png?downloads=true&downloadRank=true&stars=true)](https://nodei.co/npm/passport-saml-next/)
 
