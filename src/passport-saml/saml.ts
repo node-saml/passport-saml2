@@ -8,7 +8,7 @@ import xmldom from 'xmldom';
 import url from 'url';
 import querystring from 'querystring';
 import xmlbuilder from 'xmlbuilder';
-import type * as express from "express";
+import * as express from "express";
 // @ts-ignore
 import xmlenc from 'xml-encryption';
 const xpath = xmlCrypto.xpath;
@@ -101,6 +101,12 @@ export interface SAMLOptions {
   disableRequestACSUrl?: boolean;
   xmlSignatureTransforms: string[];
   digestAlgorithm: string;
+
+  organization?: {
+    name: string;
+    displayName: string;
+    url: string;
+  };
 }
 
 interface NameID {
@@ -1369,6 +1375,14 @@ export class SAML {
       '@Binding': 'urn:oasis:names:tc:SAML:2.0:bindings:HTTP-POST',
       '@Location': this.getCallbackUrl({} as express.Request)
     };
+
+    if (this.options.organization) {
+      metadata.Organization = {
+        OrganizationName: this.options.organization.name,
+        OrganizationDisplayName: this.options.organization.displayName,
+        OrganizationURL: this.options.organization.url,
+      }
+    }
     return xmlbuilder.create(metadata).end({ pretty: true, indent: '  ', newline: '\n' });
   }
 

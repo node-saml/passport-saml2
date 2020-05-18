@@ -8,7 +8,7 @@
     "sso",
     "shibboleth"
   ],
-  "description": "SAML 2.0 authentication strategy for Passport (temporary fork, which includes latest features)",
+  "description": "SAML 2.0 authentication strategy for Passport (fork with bugfixes, promises and typescript support)",
   "author": {
     "name": "Henri Bergius",
     "email": "henri.bergius@iki.fi",
@@ -60,6 +60,7 @@
     "should": "*",
     "sinon": "^7.2.7",
     "source-map-support": "^0.5.19",
+    "typedoc": "^0.17.7",
     "typescript": "^3.9.2"
   },
   "engines": {
