@@ -14,6 +14,10 @@ Passport-SAML has been tested to work with Onelogin, Okta, Shibboleth, [SimpleSA
 
     $ npm install passport-saml
 
+## Documentation
+
+Full documentation is available here [https://short-io.github.io/passport-saml2/](https://short-io.github.io/passport-saml2/)
+
 ## Usage
 
 The examples utilize the [Feide OpenIdp identity provider](https://openidp.feide.no/). You need an account there to log in with this. You also need to [register your site](https://openidp.feide.no/simplesaml/module.php/metaedit/index.php) as a service provider.
