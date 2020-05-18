@@ -33,7 +33,8 @@ export class CacheProvider {
         }
 
         this.options = options as CacheProviderOptions;
-        console.warn("Please setup your own cache provider. In-memory cache provider is not suitable for production purposes");
+        if (process.env.NODE_ENV === 'production')
+            console.warn("Please setup your own cache provider. In-memory cache provider is not suitable for production purposes");
 
         // Expire old cache keys
         const expirationTimer = setInterval(() => {

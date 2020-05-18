@@ -915,7 +915,7 @@ export class SAML {
     });
   }
 
-  hasValidSignatureForRedirect({Signature, SigAlg}: any, originalQuery: string): Promise<boolean | void> {
+  async hasValidSignatureForRedirect({Signature, SigAlg}: any, originalQuery: string): Promise<boolean | void> {
     const tokens = originalQuery.split('&');
     const getParam = (key: string) => {
       const exists = tokens.filter((t: string) => new RegExp(key).test(t));
@@ -931,19 +931,14 @@ export class SAML {
 
       urlString += `&${getParam('SigAlg')}`;
 
-      return this.certsToCheck()
-        .then(certs => {
-          const hasValidQuerySignature = certs.some((cert: string) => this.validateSignatureForRedirect(
-            urlString, Signature, SigAlg, cert
-          ));
-
-          if (!hasValidQuerySignature) {
-            throw 'Invalid signature';
-          }
-          return Promise.resolve();
-        });
+      const certs = await this.certsToCheck();
+      const hasValidQuerySignature = certs.some((cert: string) => this.validateSignatureForRedirect(urlString, Signature, SigAlg, cert));
+      if (!hasValidQuerySignature) {
+        throw 'Invalid signature';
+      }
+      return;
     } else {
-      return Promise.resolve(true);
+      return true;
     }
   }
 
