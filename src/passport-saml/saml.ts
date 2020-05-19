@@ -1372,7 +1372,7 @@ export class SAML {
     };
 
     if (this.options.organization) {
-      metadata.Organization = {
+      metadata.EntityDescriptor.Organization = {
         OrganizationName: this.options.organization.name,
         OrganizationDisplayName: this.options.organization.displayName,
         OrganizationURL: this.options.organization.url,
