@@ -1373,9 +1373,18 @@ export class SAML {
 
     if (this.options.organization) {
       metadata.EntityDescriptor.Organization = {
-        OrganizationName: this.options.organization.name,
-        OrganizationDisplayName: this.options.organization.displayName,
-        OrganizationURL: this.options.organization.url,
+        OrganizationName: {
+          '@lang': 'en-US',
+          '#text': this.options.organization.name
+        },
+        OrganizationDisplayName: {
+          '@lang': 'en-US',
+          '#text': this.options.organization.displayName
+        },
+        OrganizationURL: {
+          '@lang': 'en-US',
+          '#text': this.options.organization.url
+        },
       }
     }
     return xmlbuilder.create(metadata).end({ pretty: true, indent: '  ', newline: '\n' });
